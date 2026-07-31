@@ -231,15 +231,6 @@
  </footer>
 </div>
 <script>
-const url = 'https://mscholar-edu.github.io/my-fast-sheet-cache/data.json';
-
-fetch(url)
-  .then(r => r.json())
-  .then(data => {
-    console.log(data); // This loads in ~50ms
-    // Render your data here
-  });
-
  if (sessionStorage.getItem("loggedIn") !== "true") {
   window.location.href = "index.html";
 }

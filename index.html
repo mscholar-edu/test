@@ -60,17 +60,16 @@ body { font-family: Cambria, Georgia, "Times New Roman", serif; background: #f3f
 <footer><div class="footer-top"><h3>M SCHOLAR</h3><p>M Scholar is a personal learning and research hub designed to support students through curated educational resources, research references, downloadable templates, exemplary student outputs, subject updates, and academic information in one accessible platform.</p></div><div class="footer-bottom">© Copyright 2026 M SCHOLAR | Research Office</div></footer>
 <div class="overlay" id="adminOverlay"><div class="overlay-box"><h2>Admin Access</h2><p>Where would you like to go?</p><button class="overlay-btn" onclick="goToPage('adminpanelaccess.html')">Admin Panel</button><button class="overlay-btn secondary" onclick="goToPage('loginaccessapproved.html')">Student Dashboard</button><button class="overlay-btn cancel" onclick="closeOverlay()">Cancel</button></div></div>
 <script>
-const url = 'https://mscholar-edu.github.io/my-fast-sheet-cache/data.json';
-
-fetch(url)
-  .then(r => r.json())
-  .then(data => {
-    console.log(data); // This loads in ~50ms
-    // Render your data here
-  });
+const DATA_URL = "https://mscholar-edu.github.io/my-fast-sheet-cache/data.json";
 const adminPasswords = { "06211993": "kuramog25", "02092006": "JhnRy@1437" };
 const adminNames = { "06211993": "Michael Molina", "02092006": "John Rey Balasta" };
-
+let cachedData = null;
+async function loadData(){
+  if(cachedData) return cachedData;
+  const res = await fetch(`${DATA_URL}?t=${Date.now()}`);
+  cachedData = await res.json();
+  return cachedData;
+}
 async function validateLogin() {
   const lrn = document.getElementById("lrn").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -86,14 +85,14 @@ async function validateLogin() {
   }
   try {
     btn.disabled = true; btnText.textContent = "Checking..."; spinner.classList.add("show");
-    const response = await fetch(`${WEB_APP_URL}?action=login&lrn=${encodeURIComponent(lrn)}&password=${encodeURIComponent(password)}`);
-    const result = await response.json();
-    if (result.success) {
-      sessionStorage.setItem("loggedIn", "true"); sessionStorage.setItem("studentID", result.lrn); sessionStorage.setItem("studentName", result.name); sessionStorage.setItem("isAdmin", "false");
-      if (result.isDefault) { window.location.href = "changepassword.html"; }
+    const data = await loadData();
+    const result = data.find(row => String(row.LRN||row.lrn||"").trim()===lrn && String(row.Password||row.password||"").trim()===password);
+    if (result) {
+      sessionStorage.setItem("loggedIn", "true"); sessionStorage.setItem("studentID", lrn); sessionStorage.setItem("studentName", result.Name||result.name||lrn); sessionStorage.setItem("isAdmin", "false");
+      if (String(result.isDefault).toUpperCase()==="TRUE" || result.isDefault===true) { window.location.href = "changepassword.html"; }
       else { window.location.href = "loginaccessapproved.html"; }
-    } else { alert(result.message || "No Account Found!"); }
-  } catch (err) { console.error(err); alert("Cannot connect to server. Please check your internet."); }
+    } else { alert("No Account Found!"); }
+  } catch (err) { console.error(err); alert("Cannot connect to data.json. Check GitHub Pages."); }
   finally { btn.disabled = false; btnText.textContent = "Log In"; spinner.classList.remove("show"); }
 }
 function showOverlay(){ document.getElementById("adminOverlay").classList.add("show"); }
@@ -101,6 +100,7 @@ function closeOverlay(){ document.getElementById("adminOverlay").classList.remov
 function goToPage(page){ window.location.href = page; }
 document.getElementById("adminOverlay").addEventListener("click", function(e){ if(e.target === this) closeOverlay(); });
 document.addEventListener("keydown", function(e){ if(e.key === "Enter") validateLogin(); });
+loadData().catch(()=>{});
 </script>
 </body>
 </html>
